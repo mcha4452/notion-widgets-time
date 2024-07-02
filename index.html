@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notion 24-Hour Clock Widget</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #ffffff;
+        }
+
+        #container {
+            position: relative;
+            width: 300px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #currentEmoji {
+            font-size: 48px;
+            width: 60px;
+            text-align: center;
+        }
+
+        #clock {
+            font-size: 48px;
+            cursor: pointer;
+            width: 180px;
+            text-align: center;
+        }
+
+        #timezoneList {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #ffffff;
+            padding: 10px;
+            box-sizing: border-box;
+            font-size: 14px;
+            line-height: 2;
+        }
+
+        .timezone {
+            margin: 5px 0;
+            cursor: pointer;
+        }
+
+        .selected {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="currentEmoji"></div>
+        <div id="clock"></div>
+        <div id="timezoneList"></div>
+    </div>
+
+    <script>
+        const clock = document.getElementById('clock');
+        const currentEmoji = document.getElementById('currentEmoji');
+        const timezoneList = document.getElementById('timezoneList');
+        let currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        function updateClock() {
+            const now = new Date().toLocaleTimeString('en-US', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit',
+                timeZone: currentTimezone
+            });
+            clock.textContent = now;
+        }
+
+        function toggleTimezoneList() {
+            timezoneList.style.display = timezoneList.style.display === 'none' ? 'block' : 'none';
+            if (timezoneList.style.display === 'block') {
+                updateTimezoneList();
+            }
+        }
+
+        function getGMTOffset(timezone) {
+            const date = new Date();
+            const options = { timeZone: timezone, timeZoneName: 'short' };
+            const tzString = date.toLocaleString('en-US', options).split(' ').pop();
+            const offset = tzString.replace('GMT', '');
+            return offset === '' ? '+0' : offset;
+        }
+
+        const timezones = [
+            { name: "Europe/London", city: "London", emoji: "🇬🇧" },
+            { name: "Europe/Paris", city: "Paris", emoji: "🇫🇷" },
+            { name: "Europe/Rome", city: "Rome", emoji: "🇮🇹" },
+            { name: "Europe/Berlin", city: "Berlin", emoji: "🇩🇪" },
+            { name: "Europe/Moscow", city: "Moscow", emoji: "🇷🇺" },
+            { name: "America/New_York", city: "New York", emoji: "🗽" },
+            { name: "America/Los_Angeles", city: "Los Angeles", emoji: "🌴" },
+            { name: "America/Chicago", city: "Chicago", emoji: "🌆" },
+            { name: "America/Toronto", city: "Toronto", emoji: "🇨🇦" },
+            { name: "Asia/Tokyo", city: "Tokyo", emoji: "🇯🇵" },
+            { name: "Asia/Shanghai", city: "Shanghai", emoji: "🇨🇳" },
+            { name: "Asia/Dubai", city: "Dubai", emoji: "🇦🇪" },
+            { name: "Australia/Sydney", city: "Sydney", emoji: "🇦🇺" },
+            { name: "Pacific/Auckland", city: "Auckland", emoji: "🇳🇿" }
+        ];
+
+        function updateTimezoneList() {
+            timezoneList.innerHTML = '';
+            const sortedTimezones = [...timezones].sort((a, b) => {
+                if (a.name === currentTimezone) return -1;
+                if (b.name === currentTimezone) return 1;
+                return 0;
+            });
+
+            sortedTimezones.forEach(zone => {
+                const div = document.createElement('div');
+                div.className = 'timezone';
+                div.onclick = () => {
+                    currentTimezone = zone.name;
+                    updateClock();
+                    updateTimezoneList();
+                    updateCurrentEmoji();
+                    toggleTimezoneList();
+                };
+
+                const gmtOffset = getGMTOffset(zone.name);
+                const isSelected = zone.name === currentTimezone;
+                div.textContent = `${zone.emoji} ${zone.city} (GMT${gmtOffset}) ${isSelected ? '✅' : ''}`;
+                if (isSelected) div.classList.add('selected');
+                timezoneList.appendChild(div);
+            });
+        }
+
+        function updateCurrentEmoji() {
+            const currentZone = timezones.find(zone => zone.name === currentTimezone);
+            currentEmoji.textContent = currentZone ? currentZone.emoji : '🌐';
+        }
+
+        clock.onclick = toggleTimezoneList;
+        setInterval(updateClock, 1000);
+        updateClock();
+        updateTimezoneList();
+        updateCurrentEmoji();
+    </script>
+</body>
+</html>
